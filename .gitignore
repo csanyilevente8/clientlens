@@ -1,0 +1,36 @@
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# --- uv ---
+# NOTE: uv.lock SHOULD be committed for reproducible builds; do not ignore it.
+
+# --- Node / frontend ---
+node_modules/
+frontend/dist/
+*.local
+
+# --- Env / secrets (never commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+.DS_Store
+
+# --- Docker / data volumes ---
+*.log
