@@ -7,7 +7,10 @@ Detailed, versioned progress for this repo. The workspace-level entry point is
 
 ## Current phase
 
-**Pre-Phase 1** — scaffolding complete, no application code yet.
+**Phase 1 (Foundation) — in progress.**
+Done: backend skeleton (FastAPI app factory, Pydantic settings, `/health` endpoint),
+uv + Python 3.12 pinned, pytest test passing, ruff clean, app boots and serves OpenAPI.
+Next in Phase 1: MySQL via docker-compose, then auth → clients → meetings, then frontend.
 
 ---
 
@@ -71,13 +74,28 @@ Detailed, versioned progress for this repo. The workspace-level entry point is
   `git@github.com:csanyilevente8/clientlens.git`, branch `main`.
 - Built the SPEC §51 directory structure; added `.gitignore`, README, this file, ADRs.
 - Not yet pushed to remote (awaiting go-ahead).
+- Disabled commit + push signing repo-locally (default signing used a different key
+  identity than intended for this project); recreated the commit unsigned as `585ce35`.
+  Repo uses the personal identity below. Global git config untouched.
+- **Pushed to `origin main` successfully.** Session ended here.
+- NOTE: doc edits made after the push (this update + WORKSPACE.md) are uncommitted —
+  commit them at the start of next session before Phase 1 work.
 
 ## Next steps
 
-1. First commit; push to `origin main` when approved.
-2. Begin **Phase 1**: backend `pyproject.toml` (uv) + FastAPI skeleton, health endpoint,
-   MySQL via docker-compose, then auth → clients → meetings. Frontend Vite skeleton.
-   Tests at each step. Goal: React → FastAPI → MySQL.
+1. Add MySQL to `docker-compose.yml` + SQLAlchemy/Alembic wiring; a DB-backed health/
+   readiness check. Goal: backend talks to MySQL.
+2. Then auth (JWT) → clients → meetings CRUD with tenant isolation.
+3. Frontend Vite skeleton calling `/health`, then the app pages.
+   Follow SPEC §52 rhythm at each step.
+
+## Phase 1 log
+
+- 2026-09-23: backend foundation. `uv` installed (0.12.18), Python pinned to 3.12
+  (`.python-version`), `pyproject.toml` with FastAPI/uvicorn/pydantic-settings + dev
+  (pytest/httpx/ruff). App factory `app/main.py`, `core/config.py` (Pydantic settings),
+  `api/health.py`. Test `tests/test_health.py` passes; ruff clean; uvicorn boots and
+  `/health` + `/openapi.json` respond. `uv.lock` committed.
 
 ## Open questions / pending
 
