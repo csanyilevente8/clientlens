@@ -3,6 +3,16 @@
 Detailed, versioned progress for this repo. The workspace-level entry point is
 `../WORKSPACE.md` (one level up, outside git). Read that first, then this.
 
+> **Project goal (per `../SYSTEMDESING.md`):** this is a **system-design learning
+> project**. Deliverables = working app **+** system-design portfolio (`docs/adr/`,
+> `docs/architecture/`, `docs/capacity/`, `docs/failure-scenarios/`,
+> `docs/interview-questions/`). Method: reason Requirement → Constraint → Options →
+> Decision → Trade-off → Failure mode → Scaling (SYSTEMDESING §2). Build simple/synchronous
+> first, observe the bottleneck, then justify async (Kafka + outbox) with ADRs.
+> New scope vs original SPEC: transactional outbox (§10), capacity estimation (§4),
+> failure matrix + injection exercises (§21/§28), idempotency keys on POST (§24), MCP must
+> not touch MySQL directly (§19), consistency classification (§17).
+
 ---
 
 ## Current phase
@@ -11,8 +21,10 @@ Detailed, versioned progress for this repo. The workspace-level entry point is
 Done: backend skeleton (FastAPI app factory, Pydantic settings, `/health`), uv + Python
 3.12 pinned, pytest passing, ruff clean. MySQL 8 wired via docker-compose; SQLAlchemy
 (async) + Alembic set up; `/ready` readiness endpoint pings the DB and returns 200 with
-the stack up. `docker compose up` starts MySQL + backend.
-Next in Phase 1: auth (JWT) → clients → meetings CRUD with tenant isolation, then frontend.
+the stack up. `docker compose up` starts MySQL + backend. First domain model `Tenant`
+written (migration not yet generated).
+Next in Phase 1: finish Tenant migration; User+Client models; then JWT auth → tenant-
+isolated clients/meetings CRUD (build meeting processing SYNCHRONOUS first per §5).
 
 ---
 

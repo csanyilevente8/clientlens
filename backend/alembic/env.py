@@ -12,11 +12,11 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+from app import models  # noqa: F401
 from app.core.config import get_settings
 from app.core.db import Base
 
 # Import models so their tables register on Base.metadata before autogenerate.
-# (No models yet; imports added as domain models are created.)
 
 config = context.config
 if config.config_file_name is not None:
