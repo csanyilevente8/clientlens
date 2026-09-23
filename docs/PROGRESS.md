@@ -8,9 +8,11 @@ Detailed, versioned progress for this repo. The workspace-level entry point is
 ## Current phase
 
 **Phase 1 (Foundation) — in progress.**
-Done: backend skeleton (FastAPI app factory, Pydantic settings, `/health` endpoint),
-uv + Python 3.12 pinned, pytest test passing, ruff clean, app boots and serves OpenAPI.
-Next in Phase 1: MySQL via docker-compose, then auth → clients → meetings, then frontend.
+Done: backend skeleton (FastAPI app factory, Pydantic settings, `/health`), uv + Python
+3.12 pinned, pytest passing, ruff clean. MySQL 8 wired via docker-compose; SQLAlchemy
+(async) + Alembic set up; `/ready` readiness endpoint pings the DB and returns 200 with
+the stack up. `docker compose up` starts MySQL + backend.
+Next in Phase 1: auth (JWT) → clients → meetings CRUD with tenant isolation, then frontend.
 
 ---
 
@@ -83,19 +85,22 @@ Next in Phase 1: MySQL via docker-compose, then auth → clients → meetings, t
 
 ## Next steps
 
-1. Add MySQL to `docker-compose.yml` + SQLAlchemy/Alembic wiring; a DB-backed health/
-   readiness check. Goal: backend talks to MySQL.
-2. Then auth (JWT) → clients → meetings CRUD with tenant isolation.
-3. Frontend Vite skeleton calling `/health`, then the app pages.
+1. Auth (JWT) → clients → meetings CRUD with tenant isolation (SPEC §8, §9, §26).
+   First domain models (Tenant, User, Client) + first Alembic migration.
+2. Frontend Vite skeleton calling `/health`, then app pages.
    Follow SPEC §52 rhythm at each step.
 
 ## Phase 1 log
 
-- 2026-09-23: backend foundation. `uv` installed (0.12.18), Python pinned to 3.12
-  (`.python-version`), `pyproject.toml` with FastAPI/uvicorn/pydantic-settings + dev
-  (pytest/httpx/ruff). App factory `app/main.py`, `core/config.py` (Pydantic settings),
-  `api/health.py`. Test `tests/test_health.py` passes; ruff clean; uvicorn boots and
-  `/health` + `/openapi.json` respond. `uv.lock` committed.
+- 2026-09-23: backend foundation. `uv` (0.12.18), Python pinned 3.12, `pyproject.toml`
+  (FastAPI/uvicorn/pydantic-settings + dev pytest/httpx/ruff). App factory, Pydantic
+  settings, `/health`. Test passes; ruff clean; uvicorn boots; OpenAPI generated.
+- 2026-09-23: MySQL wiring. Added SQLAlchemy async + asyncmy + cryptography (needed for
+  MySQL 8 caching_sha2_password) + Alembic (async env.py targeting Base.metadata).
+  `core/db.py` (engine/session/Base/get_session dependency). `/ready` readiness endpoint
+  (DB ping) separate from `/health` liveness. `docker-compose.yml` (MySQL 8 + backend),
+  backend `Dockerfile` (uv). Verified end-to-end: `docker compose up` → `/ready` returns
+  200 `{"status":"ready","database":"ok"}`. No Alembic migrations yet (no models).
 
 ## Open questions / pending
 

@@ -16,6 +16,22 @@ class Settings(BaseSettings):
     version: str = "0.1.0"
     environment: str = "local"
 
+    # Database (MySQL). Defaults target the docker-compose service.
+    # Java/Spring analog: spring.datasource.* properties.
+    db_host: str = "localhost"
+    db_port: int = 3306
+    db_user: str = "clientlens"
+    db_password: str = "clientlens"
+    db_name: str = "clientlens"
+
+    @property
+    def database_url(self) -> str:
+        """Async SQLAlchemy URL using the asyncmy driver."""
+        return (
+            f"mysql+asyncmy://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+        )
+
 
 @lru_cache
 def get_settings() -> Settings:

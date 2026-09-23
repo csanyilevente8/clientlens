@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+FROM python:3.12-slim
+
+# Install uv (matches local tooling; reproducible installs from uv.lock)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+# Dependency layer: copy manifests first for better build caching
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --frozen --no-dev
+
+# Application code
+COPY app ./app
+
+EXPOSE 8000
+
+# uv run ensures the project venv is used
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
