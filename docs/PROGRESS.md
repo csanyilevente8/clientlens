@@ -31,6 +31,13 @@ Next in Phase 1: tenant-scoped repository layer (ADR-008 Approach B), then refac
 + clients CRUD through it, meetings CRUD (synchronous first per §5), frontend skeleton.
 9 local commits, NOT pushed (holding per user).
 
+Repository + clients CRUD DONE (ADR-008 Approach B): TenantScopedRepository[ModelT] base
+injects tenant filter on every op; ClientRepository; get_client_repository dependency binds
+tenant from CurrentUser; clients CRUD endpoints hold no tenant logic. Integration tests
+(real MySQL test DB, NullPool, fixtures) incl. the tenant-isolation backstop — 9 passing.
+Remaining Phase 1: meetings CRUD (synchronous first per §5), frontend skeleton.
+12 local commits, NOT pushed.
+
 ---
 
 ## Definition of Done (SPEC §50)
