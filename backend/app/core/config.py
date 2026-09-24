@@ -24,6 +24,23 @@ class Settings(BaseSettings):
     db_password: str = "clientlens"
     db_name: str = "clientlens"
 
+    # JWT auth (RS256). Keys loaded from PEM files for local dev; in production these
+    # would be injected via secrets (SPEC §26/§34). See backend/keys/README.md.
+    jwt_algorithm: str = "RS256"
+    jwt_private_key_path: str = "keys/jwt_private_dev.pem"
+    jwt_public_key_path: str = "keys/jwt_public_dev.pem"
+    access_token_expire_minutes: int = 30
+
+    @property
+    def jwt_private_key(self) -> str:
+        with open(self.jwt_private_key_path) as f:
+            return f.read()
+
+    @property
+    def jwt_public_key(self) -> str:
+        with open(self.jwt_public_key_path) as f:
+            return f.read()
+
     @property
     def database_url(self) -> str:
         """Async SQLAlchemy URL using the asyncmy driver."""

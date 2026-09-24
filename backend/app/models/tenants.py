@@ -9,3 +9,4 @@ class Tenant(Base, IdentifiedTimestampedMixin):
     __tablename__ = "tenants"
     # a required string column, max length 255
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str] = mapped_column(String(100), unique=True)
