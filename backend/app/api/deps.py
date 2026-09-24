@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_session
 from app.core.security import decode_access_token
 from app.repositories.clients import ClientRepository
+from app.repositories.meetings import MeetingRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -46,3 +47,14 @@ async def get_client_repository(
 
 
 ClientRepoDep = Annotated[ClientRepository, Depends(get_client_repository)]
+
+
+async def get_meeting_repository(
+    session: SessionDep,
+    current_user: CurrentUserDep,
+) -> MeetingRepository:
+    """MeetingRepository bound to the authenticated caller's tenant."""
+    return MeetingRepository(session, current_user.tenant_id)
+
+
+MeetingRepoDep = Annotated[MeetingRepository, Depends(get_meeting_repository)]
