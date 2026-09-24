@@ -21,12 +21,15 @@ Detailed, versioned progress for this repo. The workspace-level entry point is
 Done: backend skeleton (FastAPI app factory, Pydantic settings, `/health`), uv + Python
 3.12 pinned, pytest passing, ruff clean. MySQL 8 wired via docker-compose; SQLAlchemy
 (async) + Alembic set up; `/ready` readiness endpoint pings the DB and returns 200 with
-the stack up. `docker compose up` starts MySQL + backend. Domain models done: Tenant,
-User (role enum, tenant FK, per-tenant unique email), Client (tenant FK) — all with
-migrations applied + verified. Shared IdentifiedTimestampedMixin. ADR-008 multi-tenancy.
-Next in Phase 1: JWT auth (login, token issuance, JWT→user→tenant dependency, §9/§16),
-then the tenant-scoped repository layer (Approach B), clients CRUD, meetings CRUD
-(synchronous first per §5), frontend skeleton.
+the stack up. `docker compose up` starts MySQL + backend. Domain models done: Tenant
+(+ unique slug), User (role enum, tenant FK, per-tenant unique email), Client (tenant FK)
+— all migrated + verified; naming convention on Base.metadata. Shared mixin.
+**Auth complete:** RS256 JWT + bcrypt (security.py), login endpoint (slug+email+password
+-> token, uniform 401), current-user dependency (deps.py, stateless), protected /me — all
+tested end-to-end. ADR-008 (multi-tenancy), ADR-009 (auth). Dev seed script.
+Next in Phase 1: tenant-scoped repository layer (ADR-008 Approach B), then refactor login
++ clients CRUD through it, meetings CRUD (synchronous first per §5), frontend skeleton.
+9 local commits, NOT pushed (holding per user).
 
 ---
 
