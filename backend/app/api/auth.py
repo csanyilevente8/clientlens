@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import CurrentUser, CurrentUserDep
 from app.core.db import get_session
 from app.core.security import create_access_token, verify_password
 from app.models.tenants import Tenant
@@ -47,3 +48,14 @@ async def login(payload: LoginRequest, session: SessionDep) -> TokenResponse:
         subject=user.id, tenant_id=user.tenant_id, role=user.role.value
     )
     return TokenResponse(access_token=token, token_type="bearer")
+
+
+@router.get("/api/v1/auth/me", response_model=CurrentUser)
+async def me(current_user: CurrentUserDep) -> CurrentUser:
+    """Return the authenticated caller. Protected: requires a valid Bearer token.
+
+    The protection is the CurrentUserDep parameter itself — FastAPI resolves it
+    (extract token -> decode -> build CurrentUser) before this body runs, and 401s
+    if the token is missing/invalid.
+    """
+    return current_user
