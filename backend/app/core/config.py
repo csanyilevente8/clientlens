@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 5
     retrieval_max_context_chars: int = 4000
 
+    # Mock CRM (simulated external system). The CRM sync worker POSTs action items here.
+    crm_base_url: str = "http://localhost:9000"
+
     @property
     def vector_database_url(self) -> str:
         return (

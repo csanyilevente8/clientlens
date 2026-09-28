@@ -109,6 +109,21 @@ services:
       pgvector:
         condition: service_healthy
 
+  # Mock CRM: a simulated external system the CRM sync worker pushes action items into.
+  # Runs as its own container so we can treat it like a real third-party dependency
+  # (reachable over HTTP, idempotent on retry, and able to be made slow/unavailable to
+  # exercise the worker's retry/backoff/circuit-breaker/DLQ — failure scenario F).
+  mock-crm:
+    build:
+      context: ./backend
+    command: ["uv", "run", "uvicorn", "app.mock_crm.main:app", "--host", "0.0.0.0", "--port", "9000"]
+    environment:
+      # Flip these to simulate a flaky/unavailable CRM without touching client code.
+      MOCK_CRM_FAILURE_RATE: "0.0"
+      MOCK_CRM_LATENCY_MS: "0"
+    ports:
+      - "9000:9000"
+
   kafka:
     image: apache/kafka:3.8.0
     environment:
