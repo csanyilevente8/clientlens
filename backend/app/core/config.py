@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # LLM provider selection (SPEC §46). "mock" is default for dev/tests.
     llm_provider: str = "mock"
 
+    # Kafka / event bus.
+    kafka_bootstrap_servers: str = "localhost:9092"
+
     @property
     def jwt_private_key(self) -> str:
         with open(self.jwt_private_key_path) as f:
