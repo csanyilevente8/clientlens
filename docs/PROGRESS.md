@@ -78,9 +78,28 @@ Frontend commits NOT yet counted in the push tally below until pushed this sessi
 Next frontend steps: create-client form (useMutation + cache invalidation), client detail
 + meetings (status display), search page (RAG). Then optionally Phases 5-9.
 
-Next backend phase: Phase 5 (CRM) — mock CRM, async CRM worker, retries/backoff/
-circuit-breaker/DLQ (reuses the outbox/Kafka/idempotency patterns; CRM is a 3rd consumer
-of IntelligenceExtracted).
+Next backend phase: Phase 6 (MCP) — read-only tools, auth, audit (reuses the
+RetrievalService built in Phase 4).
+
+## Phase 5 log (2026-09-28)
+
+- Mock CRM (`app/mock_crm/`): standalone simulated external system in its own container.
+  Idempotent `POST /crm/action-items` keyed by `Idempotency-Key`; failure/latency
+  injection (`MOCK_CRM_FAILURE_RATE`/`MOCK_CRM_LATENCY_MS`, `X-Mock-Fail` header) to
+  exercise the worker's retry path. Commit `370eec0`.
+- CRM client (`app/integrations/crm/`): `CRMClient` protocol mirroring `LLMProvider`;
+  transient (`CRMUnavailable`) vs permanent (`CRMBadRequest`) error taxonomy. `HTTPCRMClient`
+  retries transient failures with exponential backoff + jitter, never retries 4xx, sends a
+  stable idempotency key across retries. Commit `370eec0`.
+- CRM sync worker (`app/workers/crm_worker.py`): 3rd consumer of IntelligenceExtracted
+  (group `crm_worker`, own idempotency marker). Reasoned in a mentor session; control flow:
+  permanent 4xx -> DLQ (`crm.sync.dlq`) + mark processed; transient 5xx -> propagate ->
+  circuit breaker trips -> PAUSE consumption (Kafka buffers the backlog) -> half-open probe
+  on cool-down -> resume. Upholds "eventual sync" (failure scenario F).
+- Circuit breaker (`app/workers/circuit_breaker.py`): closed/open/half-open, injectable clock.
+- Verified live e2e: meeting -> AI extract -> IntelligenceExtracted -> crm-worker -> mock CRM;
+  action item landed with correct client_ref, no DLQ messages. 46 tests passing (11 new).
+- Dockerfile now copies alembic + scripts so migrations/seed run in-container (was host-only).
 
 ---
 
@@ -100,9 +119,9 @@ of IntelligenceExtracted).
 - [ ] client intelligence is persisted
 - [ ] historical semantic search works
 - [ ] basic RAG works
-- [ ] mock CRM integration works
-- [ ] CRM failures are retried
-- [ ] consumers are idempotent
+- [x] mock CRM integration works
+- [x] CRM failures are retried
+- [x] consumers are idempotent
 - [ ] MCP server exposes read-only tools
 - [ ] MCP respects authorization
 - [ ] MCP requests are audited
@@ -125,7 +144,7 @@ of IntelligenceExtracted).
 - [ ] Phase 2 — AI Processing (LLM abstraction, mock, structured extraction, validation)
 - [ ] Phase 3 — Kafka (events, AI worker, idempotency, retries)
 - [ ] Phase 4 — Search/RAG (chunking, embeddings, vector search, retrieval)
-- [ ] Phase 5 — CRM (mock CRM, worker, retries, DLQ, idempotency)
+- [x] Phase 5 — CRM (mock CRM, worker, retries, DLQ, idempotency)
 - [ ] Phase 6 — MCP (read-only tools, auth, audit)
 - [ ] Phase 7 — Production engineering (logging, metrics, tracing, health)
 - [ ] Phase 8 — Kubernetes (Helm, deployments, HPA)

@@ -19,6 +19,13 @@ RUN mkdir -p keys \
 # Application code
 COPY app ./app
 
+# Migration + dev-seed assets. Needed so `alembic upgrade head` and the dev seed can run
+# inside the container (e.g. `docker compose exec backend uv run alembic upgrade head`),
+# rather than only from the host against the mapped DB port.
+COPY alembic ./alembic
+COPY alembic.ini ./alembic.ini
+COPY scripts ./scripts
+
 EXPOSE 8000
 
 # uv run ensures the project venv is used

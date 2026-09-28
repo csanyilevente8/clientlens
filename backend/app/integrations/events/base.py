@@ -15,6 +15,9 @@ TOPIC_MEETING_CREATED = "meeting.created"
 TOPIC_INTELLIGENCE_EXTRACTED = "intelligence.extracted"
 # Dead-letter topic: events that failed processing after all retries (§12).
 TOPIC_MEETING_ANALYSIS_DLQ = "meeting.analysis.dlq"
+# Dead-letter topic for the CRM sync worker: events whose CRM sync failed *permanently*
+# (a 4xx from the CRM). Transient CRM outages are NOT dead-lettered — the breaker holds them.
+TOPIC_CRM_SYNC_DLQ = "crm.sync.dlq"
 
 
 class EventBus(Protocol):

@@ -109,6 +109,26 @@ services:
       pgvector:
         condition: service_healthy
 
+  # CRM sync worker: consumes intelligence.extracted -> pushes action items to the CRM.
+  # Third consumer of the event stream. Circuit breaker + DLQ live in the worker; when the
+  # CRM is down it pauses consumption (Kafka buffers) rather than dumping to the DLQ.
+  crm-worker:
+    build:
+      context: ./backend
+    command: ["uv", "run", "python", "-m", "app.workers.crm_worker"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: clientlens
+      DB_PASSWORD: clientlens
+      DB_NAME: clientlens
+      ENVIRONMENT: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CRM_BASE_URL: http://mock-crm:9000
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   # Mock CRM: a simulated external system the CRM sync worker pushes action items into.
   # Runs as its own container so we can treat it like a real third-party dependency
   # (reachable over HTTP, idempotent on retry, and able to be made slow/unavailable to
