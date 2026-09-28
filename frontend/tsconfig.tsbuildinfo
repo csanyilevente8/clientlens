@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./src/auth/token.ts","./src/pages/login.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./src/auth/token.ts","./src/features/clients/useclients.ts","./src/pages/clientspage.tsx","./src/pages/login.tsx","./src/types/client.ts"],"version":"5.9.3"}
