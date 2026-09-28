@@ -10,6 +10,12 @@ WORKDIR /app
 COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --frozen --no-dev
 
+# Generate throwaway DEV JWT keys inside the image (real keys are injected via secrets in
+# production — see keys/README.md / ADR-009). openssl ships in the slim image's base.
+RUN mkdir -p keys \
+    && openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out keys/jwt_private_dev.pem \
+    && openssl rsa -pubout -in keys/jwt_private_dev.pem -out keys/jwt_public_dev.pem
+
 # Application code
 COPY app ./app
 

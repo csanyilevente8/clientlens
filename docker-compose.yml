@@ -39,6 +39,42 @@ services:
       mysql:
         condition: service_healthy
 
+  # Outbox publisher: drains outbox_events -> Kafka. Independently deployable (§37).
+  publisher:
+    build:
+      context: ./backend
+    command: ["uv", "run", "python", "-m", "app.workers.run_publisher"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: clientlens
+      DB_PASSWORD: clientlens
+      DB_NAME: clientlens
+      ENVIRONMENT: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # AI worker: consumes meeting.created -> analyzes -> persists intelligence. Scaled
+  # independently from the API (different workload) — SYSTEMDESING §14/§38.
+  ai-worker:
+    build:
+      context: ./backend
+    command: ["uv", "run", "python", "-m", "app.workers.ai_worker"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: clientlens
+      DB_PASSWORD: clientlens
+      DB_NAME: clientlens
+      ENVIRONMENT: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      LLM_PROVIDER: mock
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   kafka:
     image: apache/kafka:3.8.0
     environment:
