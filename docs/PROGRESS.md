@@ -42,7 +42,19 @@ Phase 2 DONE (ADR-010): LLMProvider abstraction (mock default, keyword-based), M
 schema, 5 intelligence tables w/ provenance, analyze_meeting service (validate->persist,
 invalid->FAILED), GET /meetings/{id}/intelligence. §48 demo verified. Still synchronous.
 14 tests passing. **PUSHED to origin/main** (18 commits).
-Next: Phase 3 — Kafka + async (202 + outbox + worker + idempotency + retries/DLQ).
+Phase 3 (async) DONE — all 5 slices:
+- Slice 1: transactional outbox (ADR §10) — meeting + outbox_event committed atomically,
+  POST returns 202 CREATED (no inline analysis).
+- Slice 2: Kafka (KRaft) + EventBus abstraction + polling outbox publisher.
+- Slice 3: ai_worker consumes meeting.created; idempotent (processed_events UNIQUE +
+  atomic marker; IntegrityError rollback on concurrent dup).
+- Slice 4: worker retries (backoff+jitter, rollback+re-fetch) + DLQ topic on exhaustion
+  (meeting FAILED + terminal marker).
+- Slice 5: publisher + ai-worker run as compose services; VERIFIED live end-to-end
+  against real Kafka; failure exercises D (worker crash) & E (Kafka down) pass — nothing
+  lost, self-heals. Dockerfile generates dev JWT keys in-image.
+20 tests passing. docs/failure-scenarios updated with executed exercises.
+Next: Phase 4 (Search/RAG) — chunking, embeddings, pgvector, retrieval.
 
 ---
 
