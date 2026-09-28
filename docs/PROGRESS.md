@@ -64,7 +64,23 @@ Phase 4 (Search/RAG) DONE — 3 slices:
   from MySQL -> RAG answer via llm.answer_question); POST /api/v1/search.
 - VERIFIED live end-to-end: meeting -> analyze -> index -> search returns grounded answer
   + sources with scores. 23 tests passing.
-Next: Phase 5 (CRM) — mock CRM, async CRM worker, retries/backoff/circuit-breaker/DLQ.
+
+Frontend (Phase 1 leftover) STARTED — mentor mode (developer writes code, assistant
+explains/reviews):
+- Vite + React 18 + TS + React Router + TanStack Query scaffold; dev proxy /api->:8000;
+  @->src alias in BOTH tsconfig (type-checker) and vite.config (bundler).
+- src/auth/token.ts (localStorage get/set/clear), src/api/client.ts (apiFetch<T> + apiGet/
+  apiPost, JWT header, backend detail in errors).
+- Login page (controlled form -> POST login -> setToken -> navigate; error display).
+- Clients page: Client type, useClients() (useQuery), ClientsPage (loading/error/data),
+  /clients route behind RequireAuth guard. Verified in browser.
+Frontend commits NOT yet counted in the push tally below until pushed this session.
+Next frontend steps: create-client form (useMutation + cache invalidation), client detail
++ meetings (status display), search page (RAG). Then optionally Phases 5-9.
+
+Next backend phase: Phase 5 (CRM) — mock CRM, async CRM worker, retries/backoff/
+circuit-breaker/DLQ (reuses the outbox/Kafka/idempotency patterns; CRM is a 3rd consumer
+of IntelligenceExtracted).
 
 ---
 
