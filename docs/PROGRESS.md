@@ -54,7 +54,17 @@ Phase 3 (async) DONE — all 5 slices:
   against real Kafka; failure exercises D (worker crash) & E (Kafka down) pass — nothing
   lost, self-heals. Dockerfile generates dev JWT keys in-image.
 20 tests passing. docs/failure-scenarios updated with executed exercises.
-Next: Phase 4 (Search/RAG) — chunking, embeddings, pgvector, retrieval.
+Phase 4 (Search/RAG) DONE — 3 slices:
+- Slice 1: EmbeddingProvider abstraction (deterministic mock, dim 384) + pgvector
+  container (ADR-004, host port 5433) + VectorStore (tenant-scoped NN search, cosine).
+- Slice 2: chunker + index_worker (2nd Kafka consumer, consumer_name=index_worker);
+  AI worker emits IntelligenceExtracted via outbox; cross-store idempotency (§25) —
+  idempotent delete+add before the MySQL marker commit.
+- Slice 3: RetrievalService (embed query -> tenant-scoped pgvector NN + structured data
+  from MySQL -> RAG answer via llm.answer_question); POST /api/v1/search.
+- VERIFIED live end-to-end: meeting -> analyze -> index -> search returns grounded answer
+  + sources with scores. 23 tests passing.
+Next: Phase 5 (CRM) — mock CRM, async CRM worker, retries/backoff/circuit-breaker/DLQ.
 
 ---
 

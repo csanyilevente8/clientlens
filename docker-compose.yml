@@ -33,10 +33,18 @@ services:
       DB_NAME: clientlens
       ENVIRONMENT: docker
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EMBEDDING_PROVIDER: mock
+      VECTOR_DB_HOST: pgvector
+      VECTOR_DB_PORT: "5432"
+      VECTOR_DB_USER: clientlens
+      VECTOR_DB_PASSWORD: clientlens
+      VECTOR_DB_NAME: clientlens_vectors
     ports:
       - "8000:8000"
     depends_on:
       mysql:
+        condition: service_healthy
+      pgvector:
         condition: service_healthy
 
   # Outbox publisher: drains outbox_events -> Kafka. Independently deployable (§37).

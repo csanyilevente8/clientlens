@@ -76,3 +76,17 @@ class MockLLMProvider:
             action_items=action_items,
             life_events=life_events,
         )
+
+    async def answer_question(self, question: str, context: str) -> str:
+        """Deterministic RAG answer for dev/tests.
+
+        A real LLM would reason over `context` to answer `question`. The mock just states
+        that the answer is grounded in the retrieved context (or says nothing was found),
+        which is enough to exercise the RAG wiring deterministically.
+        """
+        if not context.strip():
+            return "No relevant client history was found to answer this question."
+        return (
+            f"Based on the client's meeting history, here is what is relevant to "
+            f"'{question}': {context[:400]}"
+        )

@@ -34,3 +34,7 @@ class LLMProvider(Protocol):
     async def analyze_meeting(
         self, transcript: str, context: ClientContext
     ) -> MeetingAnalysis: ...
+
+    async def answer_question(self, question: str, context: str) -> str:
+        """Answer a question grounded in the provided retrieved context (RAG)."""
+        ...

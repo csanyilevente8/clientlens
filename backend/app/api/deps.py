@@ -8,10 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.security import decode_access_token
+from app.integrations.embeddings.factory import get_embedding_provider
 from app.integrations.llm.base import LLMProvider
 from app.integrations.llm.factory import get_llm_provider
+from app.integrations.vectorstore.pgvector import VectorStore
 from app.repositories.clients import ClientRepository
 from app.repositories.meetings import MeetingRepository
+from app.services.retrieval import RetrievalService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -62,3 +65,16 @@ async def get_meeting_repository(
 MeetingRepoDep = Annotated[MeetingRepository, Depends(get_meeting_repository)]
 
 LLMProviderDep = Annotated[LLMProvider, Depends(get_llm_provider)]
+
+
+async def get_retrieval_service(session: SessionDep) -> RetrievalService:
+    """Build the RetrievalService with the embedder, vector store, and LLM."""
+    return RetrievalService(
+        session=session,
+        embedder=get_embedding_provider(),
+        store=VectorStore(),
+        llm=get_llm_provider(),
+    )
+
+
+RetrievalServiceDep = Annotated[RetrievalService, Depends(get_retrieval_service)]

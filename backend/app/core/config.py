@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     vector_db_password: str = "clientlens"
     vector_db_name: str = "clientlens_vectors"
 
+    # Retrieval / RAG params (SPEC §20).
+    retrieval_top_k: int = 5
+    retrieval_max_context_chars: int = 4000
+
     @property
     def vector_database_url(self) -> str:
         return (
