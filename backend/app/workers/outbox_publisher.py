@@ -16,13 +16,18 @@ import json
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.integrations.events.base import TOPIC_MEETING_CREATED, EventBus
+from app.integrations.events.base import (
+    TOPIC_INTELLIGENCE_EXTRACTED,
+    TOPIC_MEETING_CREATED,
+    EventBus,
+)
 from app.models.outbox import OutboxEvent
-from app.services.outbox import MEETING_CREATED
+from app.services.outbox import INTELLIGENCE_EXTRACTED, MEETING_CREATED
 from app.utils.time import utcnow
 
 _EVENT_TYPE_TO_TOPIC: dict[str, str] = {
     MEETING_CREATED: TOPIC_MEETING_CREATED,
+    INTELLIGENCE_EXTRACTED: TOPIC_INTELLIGENCE_EXTRACTED,
 }
 
 

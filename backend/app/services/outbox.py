@@ -14,6 +14,7 @@ from app.models.outbox import OutboxEvent
 
 # Event type constants (the "event_type" in the SPEC §12 envelope).
 MEETING_CREATED = "MeetingCreated"
+INTELLIGENCE_EXTRACTED = "IntelligenceExtracted"
 
 
 def add_outbox_event(

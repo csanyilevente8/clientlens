@@ -11,6 +11,8 @@ from typing import Protocol
 # Topics (SPEC §12). Partitioned by aggregate id (meeting id) so events for the same
 # meeting are ordered and consumers can scale across partitions.
 TOPIC_MEETING_CREATED = "meeting.created"
+# Emitted when analysis succeeds; consumed by the indexing worker (and later CRM sync).
+TOPIC_INTELLIGENCE_EXTRACTED = "intelligence.extracted"
 # Dead-letter topic: events that failed processing after all retries (§12).
 TOPIC_MEETING_ANALYSIS_DLQ = "meeting.analysis.dlq"
 

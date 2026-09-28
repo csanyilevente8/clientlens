@@ -26,6 +26,7 @@ from app.models.meeting_status import MeetingStatus
 from app.models.meetings import Meeting
 from app.models.processed_event import ProcessedEvent
 from app.services.meeting_processing import analyze_meeting
+from app.services.outbox import INTELLIGENCE_EXTRACTED, add_outbox_event
 
 CONSUMER_NAME = "ai_worker"
 MAX_ANALYSIS_ATTEMPTS = 3
@@ -106,8 +107,21 @@ async def handle_meeting_created(
             )
         return False
 
-    # Success: record the idempotency marker in the SAME transaction as the work.
+    # Success: record the idempotency marker AND emit IntelligenceExtracted (via the
+    # outbox) in the SAME transaction as the work — so downstream consumers (indexing,
+    # CRM sync) are guaranteed the intelligence is durable before they see the event.
     session.add(ProcessedEvent(event_id=event_id, consumer_name=CONSUMER_NAME))
+    add_outbox_event(
+        session,
+        event_type=INTELLIGENCE_EXTRACTED,
+        aggregate_id=meeting.id,
+        tenant_id=meeting.tenant_id,
+        payload={
+            "meeting_id": meeting.id,
+            "tenant_id": meeting.tenant_id,
+            "client_id": meeting.client_id,
+        },
+    )
     try:
         await session.commit()
     except IntegrityError:

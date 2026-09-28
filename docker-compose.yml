@@ -75,6 +75,32 @@ services:
       mysql:
         condition: service_healthy
 
+  # Indexing worker: consumes intelligence.extracted -> chunk/embed -> pgvector. Second
+  # Kafka consumer of the event stream; scaled independently.
+  index-worker:
+    build:
+      context: ./backend
+    command: ["uv", "run", "python", "-m", "app.workers.index_worker"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: clientlens
+      DB_PASSWORD: clientlens
+      DB_NAME: clientlens
+      ENVIRONMENT: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EMBEDDING_PROVIDER: mock
+      VECTOR_DB_HOST: pgvector
+      VECTOR_DB_PORT: "5432"
+      VECTOR_DB_USER: clientlens
+      VECTOR_DB_PASSWORD: clientlens
+      VECTOR_DB_NAME: clientlens_vectors
+    depends_on:
+      mysql:
+        condition: service_healthy
+      pgvector:
+        condition: service_healthy
+
   kafka:
     image: apache/kafka:3.8.0
     environment:
