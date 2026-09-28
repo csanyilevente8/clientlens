@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.llm.base import ClientContext
 from app.integrations.llm.mock import MockLLMProvider
-from tests.conftest import auth_header, login, seed_tenant_user
+from tests.conftest import auth_header, count_outbox_events, login, seed_tenant_user
 
 DEMO_TRANSCRIPT = (
     "The client is considering selling their business within 2-3 years. "
@@ -24,9 +24,12 @@ async def test_mock_provider_is_deterministic_and_keyword_based() -> None:
     assert any("succession" in g.description.lower() for g in a1.goals)
 
 
-async def test_create_meeting_persists_intelligence_with_provenance(
-    client: AsyncClient, session: AsyncSession
+async def test_create_meeting_stages_outbox_event(
+    client: AsyncClient, session: AsyncSession, engine
 ) -> None:
+    """Slice 1: creating a meeting stages exactly one unpublished MeetingCreated outbox
+    event, atomically with the meeting. (Full intelligence extraction is verified once the
+    worker consumes the event — Slice 3.)"""
     await seed_tenant_user(session, slug="acme", email="a@acme.com")
     token = await login(client, "acme", "a@acme.com")
     cresp = await client.post("/api/v1/clients", json={"name": "John"}, headers=auth_header(token))
@@ -42,17 +45,10 @@ async def test_create_meeting_persists_intelligence_with_provenance(
         },
         headers=auth_header(token),
     )
-    assert mresp.status_code == 201
+    assert mresp.status_code == 202
     meeting_id = mresp.json()["id"]
-    assert mresp.json()["status"] == "COMPLETED"
 
-    # Read the extracted intelligence back through the API (tests the real read path).
-    intel = await client.get(
-        f"/api/v1/meetings/{meeting_id}/intelligence", headers=auth_header(token)
-    )
-    assert intel.status_code == 200
-    body = intel.json()
-    assert set(body["topics"]) >= {"business sale", "tax planning"}
-    assert "tax implications" in body["concerns"]
-    assert any("succession" in g["description"].lower() for g in body["goals"])
-    assert body["summary"]
+    events = await count_outbox_events(engine, meeting_id)
+    assert len(events) == 1
+    assert events[0].event_type == "MeetingCreated"
+    assert events[0].published_at is None  # not yet published to Kafka

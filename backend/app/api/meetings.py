@@ -8,7 +8,7 @@ documented why (the bottleneck analysis in docs/capacity + docs/failure-scenario
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
-from app.api.deps import ClientRepoDep, LLMProviderDep, MeetingRepoDep, SessionDep
+from app.api.deps import ClientRepoDep, MeetingRepoDep, SessionDep
 from app.models.intelligence import (
     ActionItem,
     ClientConcern,
@@ -24,17 +24,16 @@ from app.schemas.meetings import (
     MeetingIntelligenceResponse,
     MeetingResponse,
 )
-from app.services.meeting_processing import analyze_meeting
+from app.services.outbox import MEETING_CREATED, add_outbox_event
 
 router = APIRouter(prefix="/api/v1/meetings", tags=["meetings"])
 
 
-@router.post("", response_model=MeetingResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=MeetingResponse, status_code=status.HTTP_202_ACCEPTED)
 async def create_meeting(
     payload: MeetingCreate,
     meetings: MeetingRepoDep,
     clients: ClientRepoDep,
-    provider: LLMProviderDep,
     session: SessionDep,
 ) -> Meeting:
     # Validate the client exists AND belongs to this tenant (clients repo is tenant-scoped,
@@ -48,13 +47,20 @@ async def create_meeting(
         title=payload.title,
         occurred_at=payload.occurred_at,
         transcript=payload.transcript,
-    )  # tenant_id set by the repository
+    )  # tenant_id set by the repository, status defaults to CREATED
     created = await meetings.add(meeting)
 
-    # SYNCHRONOUS analysis, in-request (the §5 bottleneck). The response waits for this.
-    await analyze_meeting(created, session, provider)
-
-    await session.commit()
+    # Atomically stage the MeetingCreated event in the outbox (same transaction as the
+    # meeting). Thin payload: the worker re-reads the transcript by id. Analysis now happens
+    # asynchronously (worker), so we return 202 immediately instead of processing inline.
+    add_outbox_event(
+        session,
+        event_type=MEETING_CREATED,
+        aggregate_id=created.id,
+        tenant_id=created.tenant_id,
+        payload={"meeting_id": created.id, "tenant_id": created.tenant_id},
+    )
+    await session.commit()  # meeting + outbox event commit together (atomic)
     await session.refresh(created)
     return created
 

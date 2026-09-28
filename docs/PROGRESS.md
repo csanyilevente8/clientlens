@@ -34,9 +34,15 @@ Next in Phase 1: tenant-scoped repository layer (ADR-008 Approach B), then refac
 Repository + clients CRUD DONE (ADR-008 Approach B): TenantScopedRepository[ModelT] base
 injects tenant filter on every op; ClientRepository; get_client_repository dependency binds
 tenant from CurrentUser; clients CRUD endpoints hold no tenant logic. Integration tests
-(real MySQL test DB, NullPool, fixtures) incl. the tenant-isolation backstop — 9 passing.
-Remaining Phase 1: meetings CRUD (synchronous first per §5), frontend skeleton.
-12 local commits, NOT pushed.
+(real MySQL test DB, NullPool, fixtures) incl. the tenant-isolation backstop.
+Meetings CRUD DONE (SYNCHRONOUS, §5 Stage 1): Meeting model, MeetingRepository, create runs
+processing inline. Bottleneck analysis DONE (docs/capacity + docs/failure-scenarios):
+peak ~10/s, Little's Law -> ~200 concurrent -> worker-pool exhaustion; justifies async.
+Phase 2 DONE (ADR-010): LLMProvider abstraction (mock default, keyword-based), MeetingAnalysis
+schema, 5 intelligence tables w/ provenance, analyze_meeting service (validate->persist,
+invalid->FAILED), GET /meetings/{id}/intelligence. §48 demo verified. Still synchronous.
+14 tests passing. **PUSHED to origin/main** (18 commits).
+Next: Phase 3 — Kafka + async (202 + outbox + worker + idempotency + retries/DLQ).
 
 ---
 

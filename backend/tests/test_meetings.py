@@ -12,9 +12,14 @@ async def _create_client(client: AsyncClient, token: str, name: str = "John Smit
     return resp.json()["id"]
 
 
-async def test_create_meeting_processes_to_completed(
+async def test_create_meeting_accepts_and_stays_created(
     client: AsyncClient, session: AsyncSession
 ) -> None:
+    """Async ingestion (Slice 1): create returns 202 and the meeting sits at CREATED.
+
+    Analysis is now asynchronous (worker), so it is NOT COMPLETED on return. An outbox
+    event must have been recorded atomically with the meeting.
+    """
     await seed_tenant_user(session, slug="acme", email="a@acme.com")
     token = await login(client, "acme", "a@acme.com")
     client_id = await _create_client(client, token)
@@ -29,10 +34,9 @@ async def test_create_meeting_processes_to_completed(
         },
         headers=auth_header(token),
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 202
     body = resp.json()
-    # Synchronous processing ran inline, so the status is already COMPLETED on return.
-    assert body["status"] == "COMPLETED"
+    assert body["status"] == "CREATED"
     assert body["client_id"] == client_id
 
 

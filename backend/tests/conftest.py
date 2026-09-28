@@ -11,7 +11,7 @@ from collections.abc import AsyncGenerator
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import NullPool
+from sqlalchemy import NullPool, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
@@ -100,3 +100,20 @@ async def login(client: AsyncClient, slug: str, email: str, password: str = "sec
 
 def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
+
+
+async def count_outbox_events(engine, aggregate_id: str) -> list:
+    """Read outbox rows for an aggregate using a fresh, cleanly-closed session.
+
+    Reading through a dedicated short-lived session (rather than the long-lived `session`
+    fixture) avoids cross-event-loop connection entanglement when a test also drives the
+    app via the `client` fixture.
+    """
+    from app.models.outbox import OutboxEvent
+
+    maker = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    async with maker() as s:
+        result = await s.execute(
+            select(OutboxEvent).where(OutboxEvent.aggregate_id == aggregate_id)
+        )
+        return list(result.scalars().all())
