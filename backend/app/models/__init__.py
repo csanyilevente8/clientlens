@@ -7,5 +7,6 @@ from app.models.intelligence import MeetingTopic as MeetingTopic
 from app.models.meetings import Meeting as Meeting
 from app.models.mixins import IdentifiedTimestampedMixin as IdentifiedTimestampedMixin
 from app.models.outbox import OutboxEvent as OutboxEvent
+from app.models.processed_event import ProcessedEvent as ProcessedEvent
 from app.models.tenants import Tenant as Tenant
 from app.models.users import User as User

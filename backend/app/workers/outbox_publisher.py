@@ -11,6 +11,7 @@ Maps outbox event_type -> Kafka topic.
 """
 
 import asyncio
+import json
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -40,9 +41,14 @@ async def publish_pending(session: AsyncSession, bus: EventBus, *, batch_size: i
         if topic is None:
             # Unknown event type — skip marking so it can be handled once mapped.
             continue
+        # Build the wire message: the stored payload plus the envelope's event_id (the
+        # outbox row id). The Kafka KEY stays aggregate_id (partitioning/ordering); the
+        # event_id travels in the body for idempotent consumption.
+        body = json.loads(event.payload)
+        body["event_id"] = event.id
         # Publish first; mark published after. If we crash between, the row stays
         # unpublished and gets re-published next run (at-least-once).
-        await bus.publish(topic, key=event.aggregate_id, value=event.payload.encode())
+        await bus.publish(topic, key=event.aggregate_id, value=json.dumps(body).encode())
         event.published_at = utcnow()
 
     await session.commit()
