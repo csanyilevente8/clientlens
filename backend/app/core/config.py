@@ -37,6 +37,21 @@ class Settings(BaseSettings):
     # Kafka / event bus.
     kafka_bootstrap_servers: str = "localhost:9092"
 
+    # Embeddings + vector store (pgvector). Separate from MySQL (ADR-004).
+    embedding_provider: str = "mock"
+    vector_db_host: str = "localhost"
+    vector_db_port: int = 5432
+    vector_db_user: str = "clientlens"
+    vector_db_password: str = "clientlens"
+    vector_db_name: str = "clientlens_vectors"
+
+    @property
+    def vector_database_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.vector_db_user}:{self.vector_db_password}"
+            f"@{self.vector_db_host}:{self.vector_db_port}/{self.vector_db_name}"
+        )
+
     @property
     def jwt_private_key(self) -> str:
         with open(self.jwt_private_key_path) as f:
