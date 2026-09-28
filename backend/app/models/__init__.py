@@ -1,4 +1,9 @@
 from app.models.clients import Client as Client
+from app.models.intelligence import ActionItem as ActionItem
+from app.models.intelligence import ClientConcern as ClientConcern
+from app.models.intelligence import ClientGoal as ClientGoal
+from app.models.intelligence import LifeEvent as LifeEvent
+from app.models.intelligence import MeetingTopic as MeetingTopic
 from app.models.meetings import Meeting as Meeting
 from app.models.mixins import IdentifiedTimestampedMixin as IdentifiedTimestampedMixin
 from app.models.tenants import Tenant as Tenant

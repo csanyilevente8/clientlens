@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.security import decode_access_token
+from app.integrations.llm.base import LLMProvider
+from app.integrations.llm.factory import get_llm_provider
 from app.repositories.clients import ClientRepository
 from app.repositories.meetings import MeetingRepository
 
@@ -58,3 +60,5 @@ async def get_meeting_repository(
 
 
 MeetingRepoDep = Annotated[MeetingRepository, Depends(get_meeting_repository)]
+
+LLMProviderDep = Annotated[LLMProvider, Depends(get_llm_provider)]

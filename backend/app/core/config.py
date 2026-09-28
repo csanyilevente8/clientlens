@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     jwt_public_key_path: str = "keys/jwt_public_dev.pem"
     access_token_expire_minutes: int = 30
 
+    # LLM provider selection (SPEC §46). "mock" is default for dev/tests.
+    llm_provider: str = "mock"
+
     @property
     def jwt_private_key(self) -> str:
         with open(self.jwt_private_key_path) as f:

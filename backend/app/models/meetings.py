@@ -27,3 +27,11 @@ class Meeting(Base, IdentifiedTimestampedMixin):
     status: Mapped[MeetingStatus] = mapped_column(
         Enum(MeetingStatus), nullable=False, default=MeetingStatus.CREATED
     )
+
+    # Filled in after analysis. Nullable until processing completes.
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Provenance: how the analysis was produced (SPEC §16 — LLM output is probabilistic).
+    model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    model_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    prompt_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    processing_timestamp: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

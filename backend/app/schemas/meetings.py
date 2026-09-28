@@ -16,6 +16,29 @@ class MeetingCreate(BaseModel):
     transcript: str
 
 
+class GoalOut(BaseModel):
+    description: str
+    timeframe: str | None = None
+
+
+class ActionItemOut(BaseModel):
+    description: str
+    owner: str | None = None
+
+
+class MeetingIntelligenceResponse(BaseModel):
+    """The structured intelligence extracted from a meeting."""
+
+    meeting_id: str
+    status: MeetingStatus
+    summary: str | None = None
+    topics: list[str] = []
+    goals: list[GoalOut] = []
+    concerns: list[str] = []
+    action_items: list[ActionItemOut] = []
+    life_events: list[str] = []
+
+
 class MeetingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

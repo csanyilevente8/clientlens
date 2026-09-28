@@ -6,11 +6,25 @@ documented why (the bottleneck analysis in docs/capacity + docs/failure-scenario
 """
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
 
-from app.api.deps import ClientRepoDep, MeetingRepoDep, SessionDep
+from app.api.deps import ClientRepoDep, LLMProviderDep, MeetingRepoDep, SessionDep
+from app.models.intelligence import (
+    ActionItem,
+    ClientConcern,
+    ClientGoal,
+    LifeEvent,
+    MeetingTopic,
+)
 from app.models.meetings import Meeting
-from app.schemas.meetings import MeetingCreate, MeetingResponse
-from app.services.meeting_processing import process_meeting_sync
+from app.schemas.meetings import (
+    ActionItemOut,
+    GoalOut,
+    MeetingCreate,
+    MeetingIntelligenceResponse,
+    MeetingResponse,
+)
+from app.services.meeting_processing import analyze_meeting
 
 router = APIRouter(prefix="/api/v1/meetings", tags=["meetings"])
 
@@ -20,6 +34,7 @@ async def create_meeting(
     payload: MeetingCreate,
     meetings: MeetingRepoDep,
     clients: ClientRepoDep,
+    provider: LLMProviderDep,
     session: SessionDep,
 ) -> Meeting:
     # Validate the client exists AND belongs to this tenant (clients repo is tenant-scoped,
@@ -36,8 +51,8 @@ async def create_meeting(
     )  # tenant_id set by the repository
     created = await meetings.add(meeting)
 
-    # SYNCHRONOUS processing, in-request (the §5 bottleneck). The response waits for this.
-    await process_meeting_sync(created)
+    # SYNCHRONOUS analysis, in-request (the §5 bottleneck). The response waits for this.
+    await analyze_meeting(created, session, provider)
 
     await session.commit()
     await session.refresh(created)
@@ -55,3 +70,32 @@ async def get_meeting(meeting_id: str, meetings: MeetingRepoDep) -> Meeting:
     if meeting is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Meeting not found")
     return meeting
+
+
+@router.get("/{meeting_id}/intelligence", response_model=MeetingIntelligenceResponse)
+async def get_meeting_intelligence(
+    meeting_id: str, meetings: MeetingRepoDep, session: SessionDep
+) -> MeetingIntelligenceResponse:
+    """Return the structured intelligence extracted from a meeting.
+
+    Tenant-scoped: the meeting is fetched via the tenant-scoped repo first (404 if not this
+    tenant's), so the intelligence rows we then read are guaranteed to be in-tenant.
+    """
+    meeting = await meetings.get(meeting_id)
+    if meeting is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Meeting not found")
+
+    async def rows(model):  # type: ignore[no-untyped-def]
+        result = await session.execute(select(model).where(model.meeting_id == meeting_id))
+        return list(result.scalars().all())
+
+    return MeetingIntelligenceResponse(
+        meeting_id=meeting_id,
+        summary=meeting.summary,
+        status=meeting.status,
+        topics=[t.topic for t in await rows(MeetingTopic)],
+        goals=[GoalOut(description=g.description, timeframe=g.timeframe) for g in await rows(ClientGoal)],
+        concerns=[c.description for c in await rows(ClientConcern)],
+        action_items=[ActionItemOut(description=a.description, owner=a.owner) for a in await rows(ActionItem)],
+        life_events=[e.description for e in await rows(LifeEvent)],
+    )
