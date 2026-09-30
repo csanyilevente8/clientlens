@@ -44,6 +44,23 @@ request path and scale the worker pool independently.
 Meeting ingestion (create) = strong (must not be lost). LLM analysis / status = eventual
 (acceptable to be seconds/minutes behind). This split is exactly what justifies async.
 
+**Q10 — Why do we need an outbox?**
+The API must do two things atomically: persist the meeting AND emit an event. Without the
+outbox you'd either write the DB then publish to Kafka (crash between = meeting saved, event
+lost) or publish then write (crash between = ghost event for a meeting that doesn't exist).
+The outbox writes the event row in the SAME transaction as the business change, and a
+separate publisher drains it to Kafka. Atomicity restored; the cost is at-least-once
+publishing (publisher can crash after publish, before marking published_at → re-publish →
+duplicates → consumers must be idempotent). See `app/workers/outbox_publisher.py`.
+
+**"Event-driven vs microservices" (framing, not one of the 35)**
+Microservices = how you *decompose/deploy* (structure). Event-driven = how components
+*communicate* (interaction). Orthogonal. ClientLens is both, but chooses the communication
+style per interaction: event-driven for the meeting pipeline (slow LLM + flaky CRM +
+fan-out to 3 consumers), synchronous REST where an immediate/consistent answer is needed
+(login, create client, RAG). Kafka is justified by **fan-out + slow/flaky downstreams**,
+not by "microservices." Full write-up: `architecture/event-driven-vs-direct-call.md`.
+
 ---
 
 Remaining questions to answer as later phases are built:

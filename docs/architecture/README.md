@@ -19,3 +19,10 @@ worker → LLM → MySQL → Vector DB).
 
 _To be added as each architecture stage is reached. Text/Mermaid diagrams are fine; PNGs
 optional._
+
+## Written analyses
+
+- `event-driven-vs-direct-call.md` — why the meeting pipeline is event-driven (outbox →
+  Kafka → 3 consumers) vs direct synchronous calls; what it bought (failure isolation,
+  independent scaling, loose coupling) and what it cost (eventual consistency + outbox/
+  idempotency/DLQ/breaker machinery). Complements diagram `03-kafka-flow`.
