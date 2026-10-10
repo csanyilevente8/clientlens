@@ -66,7 +66,16 @@ async def create_meeting(
 
 
 @router.get("", response_model=list[MeetingResponse])
-async def list_meetings(meetings: MeetingRepoDep) -> list[Meeting]:
+async def list_meetings(
+    meetings: MeetingRepoDep, client_id: str | None = None
+) -> list[Meeting]:
+    """List the tenant's meetings, optionally filtered to one client.
+
+    The optional `client_id` query param scopes the result server-side (tenant + client),
+    so the frontend never over-fetches or filters cross-tenant data itself.
+    """
+    if client_id is not None:
+        return await meetings.list_by_client(client_id)
     return await meetings.list()
 
 
