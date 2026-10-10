@@ -1,5 +1,6 @@
 import { useClients } from "@/features/clients/useClients";
 import { CreateClientForm } from "./CreateClientForm";
+import { Link } from "react-router-dom";
 
 export function ClientsPage() {
     const {data, isLoading, error } = useClients();
@@ -12,8 +13,10 @@ export function ClientsPage() {
             </div>
             <div>
                 <ul>
-                    {data?.map((c) => <li key={c.id}>{c.name}</li>)}
-                </ul>
+                    {data?.map((c) => (
+                        <li key={c.id}><Link to={`/clients/${c.id}`}>{c.name}</Link></li>
+                    ))}
+              </ul>
             </div>
         </div>
     )

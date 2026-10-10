@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Login } from "./pages/Login";
 import { getToken } from "./auth/token";
 import { ClientsPage } from "./pages/ClientsPage";
+import { ClientDetail } from "./pages/ClientDetail";
 
 // A wrapper component: render children only if logged in, else redirect to /login.
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ export function App() {
           </RequireAuth>
         }
       />
+      <Route path="/clients/:id" element={<RequireAuth><ClientDetail /></RequireAuth>} />
     </Routes>
   );
 }
