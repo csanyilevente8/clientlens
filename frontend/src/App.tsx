@@ -4,41 +4,21 @@ import { getToken } from "./auth/token";
 import { ClientsPage } from "./pages/ClientsPage";
 import { ClientDetail } from "./pages/ClientDetail";
 import { SearchPage } from "./pages/SearchPage";
+import { AppShell } from "./components/AppShell";
 
-// A wrapper component: render children only if logged in, else redirect to /login.
+// Render children only if logged in (inside the app shell), else redirect to /login.
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  return getToken() ? <>{children}</> : <Navigate to="/login" replace />;
+  return getToken() ? <AppShell>{children}</AppShell> : <Navigate to="/login" replace />;
 }
 
-
-// Minimal placeholder app shell. YOU will build the real routes/pages:
-//   /login, /clients, /clients/:id, /meetings/:id, /search
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<Placeholder />} />
+      <Route path="/" element={<Navigate to="/clients" replace />} />
       <Route path="/login" element={<Login />} />
-      <Route
-        path="/clients"
-        element={
-          <RequireAuth>
-            <ClientsPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/search"
-        element={
-          <RequireAuth>
-            <SearchPage />
-          </RequireAuth>
-        }
-      />
+      <Route path="/clients" element={<RequireAuth><ClientsPage /></RequireAuth>} />
       <Route path="/clients/:id" element={<RequireAuth><ClientDetail /></RequireAuth>} />
+      <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>} />
     </Routes>
   );
-}
-
-function Placeholder() {
-  return <h1>ClientLens — frontend scaffold ready</h1>;
 }

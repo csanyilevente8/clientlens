@@ -24,18 +24,26 @@ export function Login() {
     }
 
     return(
-        <div>
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="slug">Tenant</label>
-                <input id="slug" value={slug} placeholder="Tenant" onChange={(e) => setSlug(e.target.value)} />
-                
-                <label htmlFor="email">Email</label>
-                <input id="email" value={email} type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-                
-                <label htmlFor="password">Password</label>        
-                <input id="password" value={password} type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+        <div className="auth-wrap">
+            <form className="card auth-card stack" onSubmit={handleSubmit}>
+                <h2>Sign in to ClientLens</h2>
 
-                {error && <p style={{ color: "red" }}>{error}</p>}
+                <div>
+                    <label htmlFor="slug">Tenant</label>
+                    <input id="slug" value={slug} placeholder="acme" onChange={(e) => setSlug(e.target.value)} />
+                </div>
+
+                <div>
+                    <label htmlFor="email">Email</label>
+                    <input id="email" value={email} type="email" placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
+                </div>
+
+                <div>
+                    <label htmlFor="password">Password</label>
+                    <input id="password" value={password} type="password" placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} />
+                </div>
+
+                {error && <p className="error">{error}</p>}
 
                 <button type="submit">Log In</button>
             </form>

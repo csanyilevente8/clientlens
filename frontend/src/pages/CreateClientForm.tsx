@@ -11,18 +11,22 @@ export function CreateClientForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            <label htmlFor="name">Client Name</label>
-            <input id="name" 
-                type="text" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)}/>
+        <form onSubmit={handleSubmit} className="stack">
+            <div>
+                <label htmlFor="name">Client name</label>
+                <div className="row">
+                    <input id="name"
+                        type="text"
+                        placeholder="e.g. Jane Smith"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}/>
+                    <button type="submit" disabled={isPending || !name.trim()}>
+                        {isPending ? "Adding..." : "Add client"}
+                    </button>
+                </div>
+            </div>
 
-            <button type="submit" disabled={isPending || !name.trim()}>
-                {isPending ? "Adding..." : "Add client"}
-            </button>
-
-            {error && <p style={{ color: "red" }}>{error.message}</p>}
+            {error && <p className="error">{error.message}</p>}
         </form>
     )
 }

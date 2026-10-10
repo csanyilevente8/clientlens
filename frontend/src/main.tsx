@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
+import "./index.css";
 
 // TanStack Query manages SERVER state (fetching/caching API data). We do not duplicate
 // server state in a global store (SPEC §28) — Query is the cache.

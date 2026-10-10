@@ -1,6 +1,13 @@
 import { useClient } from "@/features/clients/useClient";
 import { useClientMeetings } from "@/features/meetings/useClientMeetings";
-import { useParams } from "react-router-dom"
+import { useParams, Link } from "react-router-dom"
+
+const badgeClass: Record<string, string> = {
+    CREATED: "badge badge--created",
+    PROCESSING: "badge badge--processing",
+    COMPLETED: "badge badge--completed",
+    FAILED: "badge badge--failed",
+};
 
 export function ClientDetail() {
 
@@ -8,19 +15,30 @@ export function ClientDetail() {
     const { data: client, isLoading, error } = useClient(id!);
     const { data: meetings } = useClientMeetings(id!);
 
-    if (isLoading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error.message}</p>;
+    if (isLoading) return <p className="muted">Loading...</p>;
+    if (error) return <p className="error">Error: {error.message}</p>;
     if (!client) return null;
 
-  return (
+    return (
         <div>
-        <h2>{client.name}</h2>
-        <h3>Meetings</h3>
-        <ul>
-            {meetings?.map((m) => (
-                <li key={m.id}>{m.title} — {m.status}</li>
-            ))}
-        </ul>
+            <p><Link to="/clients">← Clients</Link></p>
+            <h2>{client.name}</h2>
+
+            <div className="card">
+                <h3>Meetings</h3>
+                {meetings && meetings.length > 0 ? (
+                    <ul className="list">
+                        {meetings.map((m) => (
+                            <li className="list__item" key={m.id}>
+                                <span>{m.title}</span>
+                                <span className={badgeClass[m.status] ?? "badge"}>{m.status}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="muted">No meetings for this client yet.</p>
+                )}
+            </div>
         </div>
     );
 }
