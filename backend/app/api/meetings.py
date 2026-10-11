@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.api.deps import ClientRepoDep, MeetingRepoDep, SessionDep
+from app.core.logging import get_correlation_id
 from app.models.intelligence import (
     ActionItem,
     ClientConcern,
@@ -58,7 +59,13 @@ async def create_meeting(
         event_type=MEETING_CREATED,
         aggregate_id=created.id,
         tenant_id=created.tenant_id,
-        payload={"meeting_id": created.id, "tenant_id": created.tenant_id},
+        payload={
+            "meeting_id": created.id,
+            "tenant_id": created.tenant_id,
+            # Carry the request's correlation id through the async pipeline so the worker's
+            # logs share it — lets us trace one meeting end to end across services (SPEC §30).
+            "correlation_id": get_correlation_id(),
+        },
     )
     await session.commit()  # meeting + outbox event commit together (atomic)
     await session.refresh(created)

@@ -78,8 +78,23 @@ Frontend commits NOT yet counted in the push tally below until pushed this sessi
 Next frontend steps: create-client form (useMutation + cache invalidation), client detail
 + meetings (status display), search page (RAG). Then optionally Phases 5-9.
 
-Next backend phase: Phase 7 (production engineering) — structured logging, metrics,
-tracing, health. (Phases 1-6 complete.)
+Next backend phase: Phase 8 (Kubernetes) — Helm charts, deployments per service, HPA.
+(Phases 1-7 complete.)
+
+## Phase 7 log (2026-10-11)
+
+- **Structured logging** (`app/core/logging.py`): JSON logs to stdout; a `correlation_id`
+  context var is injected into every record. `configure_logging()` installs it (API +
+  workers).
+- **Correlation id across services** (SPEC §30 / §31 Q29): `ObservabilityMiddleware` reads
+  `X-Request-ID` (or generates one), binds it, and echoes it back. The id is carried in the
+  MeetingCreated outbox payload → the AI worker binds it → one meeting is traceable end to
+  end across API + workers via a shared id (correlation-id "tracing"; full OpenTelemetry is a
+  future upgrade).
+- **Metrics** (`app/core/metrics.py` + `/metrics`): Prometheus RED metrics (request count +
+  latency histogram), labeled by method/route-template/status (bounded cardinality).
+- Access logging: one structured line per request (method, path, status, duration, cid).
+- Dep: `prometheus-client`. 62 backend tests passing (+5 observability).
 
 ## Phase 6 log (2026-10-11)
 
@@ -140,8 +155,8 @@ tracing, health. (Phases 1-6 complete.)
 - [x] MCP respects authorization
 - [x] MCP requests are audited
 - [ ] frontend displays processing status
-- [ ] logs are structured
-- [ ] metrics exist
+- [x] logs are structured
+- [x] metrics exist
 - [ ] unit tests exist
 - [ ] integration tests exist
 - [ ] Docker Compose starts the application
@@ -160,7 +175,7 @@ tracing, health. (Phases 1-6 complete.)
 - [ ] Phase 4 — Search/RAG (chunking, embeddings, vector search, retrieval)
 - [x] Phase 5 — CRM (mock CRM, worker, retries, DLQ, idempotency)
 - [x] Phase 6 — MCP (read-only tools, auth, audit)
-- [ ] Phase 7 — Production engineering (logging, metrics, tracing, health)
+- [x] Phase 7 — Production engineering (logging, metrics, tracing, health)
 - [ ] Phase 8 — Kubernetes (Helm, deployments, HPA)
 - [ ] Phase 9 — Terraform/AWS
 

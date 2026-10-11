@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
+from app.core.logging import get_logger, set_correlation_id
 from app.integrations.events.base import (
     TOPIC_MEETING_ANALYSIS_DLQ,
     TOPIC_MEETING_CREATED,
@@ -27,6 +28,8 @@ from app.models.meetings import Meeting
 from app.models.processed_event import ProcessedEvent
 from app.services.meeting_processing import analyze_meeting
 from app.services.outbox import INTELLIGENCE_EXTRACTED, add_outbox_event
+
+_log = get_logger("clientlens.ai_worker")
 
 CONSUMER_NAME = "ai_worker"
 MAX_ANALYSIS_ATTEMPTS = 3
@@ -154,6 +157,13 @@ async def run_ai_worker(
         async for msg in consumer:
             payload = json.loads(msg.value.decode())
             event_id = payload.get("event_id") or (msg.key.decode() if msg.key else None)
+            # Bind the correlation id carried from the API so this worker's logs share the
+            # id — the meeting is traceable end to end across services (SPEC §30).
+            set_correlation_id(payload.get("correlation_id"))
+            _log.info(
+                "ai_worker.event", extra={"event_id": event_id,
+                                          "meeting_id": payload.get("meeting_id")}
+            )
             async with session_maker() as session:
                 await handle_meeting_created(
                     session, provider, event_id=event_id, payload=payload, dlq=dlq
@@ -167,5 +177,7 @@ async def run_ai_worker(
 
 if __name__ == "__main__":
     from app.core.db import SessionLocal
+    from app.core.logging import configure_logging
 
+    configure_logging()
     asyncio.run(run_ai_worker(SessionLocal))
