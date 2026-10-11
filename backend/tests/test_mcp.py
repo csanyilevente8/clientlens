@@ -8,6 +8,7 @@ patching the session factory and vector store the tool uses.
 """
 
 import uuid
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
@@ -136,3 +137,61 @@ async def test_search_tool_returns_grounded_answer_for_authenticated_tenant(
     assert unauth.tenant_id is None  # no tenant leaked for a failed-auth call
 
     await vstore.delete_by_meeting(m.tenant_id, m.id)
+
+
+# ---- the structured tools (need MySQL only, no pgvector) ----
+
+async def test_structured_tools_return_tenant_scoped_data_and_audit(
+    client, session, engine, monkeypatch
+) -> None:
+    from app.models.clients import Client
+    from app.models.intelligence import ActionItem, ClientConcern, ClientGoal
+
+    tenant, _ = await seed_tenant_user(session, slug="acme", email="a@acme.com")
+    maker = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
+    # Seed a client + a meeting + some extracted intelligence directly.
+    async with maker() as s:
+        c = Client(tenant_id=tenant.id, name="Jane")
+        s.add(c)
+        await s.flush()
+        cid = c.id
+        meeting = Meeting(tenant_id=tenant.id, client_id=cid, title="Annual Review",
+                          occurred_at=datetime(2026, 9, 1, 10, 0, tzinfo=UTC),
+                          transcript="notes")
+        s.add(meeting)
+        await s.flush()
+        mid = meeting.id
+        s.add(ClientGoal(tenant_id=tenant.id, client_id=cid, meeting_id=mid,
+                         description="Retire by 60", timeframe="5 years"))
+        s.add(ClientConcern(tenant_id=tenant.id, client_id=cid, meeting_id=mid,
+                            description="Market volatility"))
+        s.add(ActionItem(tenant_id=tenant.id, client_id=cid, meeting_id=mid,
+                         description="Send tax projection", owner="advisor"))
+        await s.commit()
+
+    monkeypatch.setattr(mcp_server, "SessionLocal", maker)
+    monkeypatch.setattr(mcp_audit, "SessionLocal", maker)
+
+    token = create_access_token(subject="u1", tenant_id=tenant.id, role="advisor")
+    ctx = _ctx_with_auth(f"Bearer {token}")
+
+    context = await mcp_server.get_client_context(ctx, client_id=cid)
+    assert "Retire by 60" in context and "Market volatility" in context
+
+    meetings = await mcp_server.get_recent_meetings(ctx, client_id=cid)
+    assert "Annual Review" in meetings and "2026-09-01" in meetings
+
+    actions = await mcp_server.get_open_action_items(ctx, client_id=cid)
+    assert "Send tax projection" in actions and "advisor" in actions
+
+    # Unauthenticated is refused for a structured tool too.
+    denied = await mcp_server.get_client_context(_ctx_with_auth(None), client_id=cid)
+    assert denied.startswith("Unauthorized")
+
+    # All four calls audited (3 success + 1 unauthorized), tenant scoped.
+    async with maker() as s:
+        logs = (await s.execute(select(McpAuditLog))).scalars().all()
+    by_tool = {a.tool_name for a in logs if a.outcome == "success"}
+    assert by_tool == {"get_client_context", "get_recent_meetings", "get_open_action_items"}
+    assert any(a.outcome == "unauthorized" and a.tenant_id is None for a in logs)
