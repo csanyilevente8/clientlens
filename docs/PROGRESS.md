@@ -78,8 +78,22 @@ Frontend commits NOT yet counted in the push tally below until pushed this sessi
 Next frontend steps: create-client form (useMutation + cache invalidation), client detail
 + meetings (status display), search page (RAG). Then optionally Phases 5-9.
 
-Next backend phase: Phase 6 (MCP) — read-only tools, auth, audit (reuses the
-RetrievalService built in Phase 4).
+Next backend phase: Phase 7 (production engineering) — structured logging, metrics,
+tracing, health. (Phases 1-6 complete.)
+
+## Phase 6 log (2026-10-11)
+
+- MCP server (`app/mcp/`): HTTP/SSE transport (FastMCP), per-request bearer-JWT auth
+  (public-key verify, ADR-009); the server is an application boundary (never touches the
+  DB directly — ADR-006 / SYSTEMDESING §19).
+- 4 read-only tools (SYSTEMDESING §19): `search_client_history` (reuses RetrievalService /
+  RAG), `get_client_context`, `get_recent_meetings`, `get_open_action_items`. All go through
+  the service/repo layer, tenant-scoped from the token (never a tool arg).
+- Audit: `mcp_audit_logs` table + migration; every call (success/error/unauthorized) writes
+  a durable row; auth failures leak no tenant. Shared `_run_tool` runner centralizes
+  auth → work → audit.
+- ADR-006 (mcp-application-boundary) written. Pinned `mcp>=1.2,<2` (stable FastMCP line).
+- Architecture doc: `docs/architecture/07-mcp-rag-flow.md`. 57 backend tests passing.
 
 ## Phase 5 log (2026-09-28)
 
@@ -122,9 +136,9 @@ RetrievalService built in Phase 4).
 - [x] mock CRM integration works
 - [x] CRM failures are retried
 - [x] consumers are idempotent
-- [ ] MCP server exposes read-only tools
-- [ ] MCP respects authorization
-- [ ] MCP requests are audited
+- [x] MCP server exposes read-only tools
+- [x] MCP respects authorization
+- [x] MCP requests are audited
 - [ ] frontend displays processing status
 - [ ] logs are structured
 - [ ] metrics exist
@@ -145,7 +159,7 @@ RetrievalService built in Phase 4).
 - [ ] Phase 3 — Kafka (events, AI worker, idempotency, retries)
 - [ ] Phase 4 — Search/RAG (chunking, embeddings, vector search, retrieval)
 - [x] Phase 5 — CRM (mock CRM, worker, retries, DLQ, idempotency)
-- [ ] Phase 6 — MCP (read-only tools, auth, audit)
+- [x] Phase 6 — MCP (read-only tools, auth, audit)
 - [ ] Phase 7 — Production engineering (logging, metrics, tracing, health)
 - [ ] Phase 8 — Kubernetes (Helm, deployments, HPA)
 - [ ] Phase 9 — Terraform/AWS

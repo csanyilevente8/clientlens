@@ -31,7 +31,7 @@ name the conditions that would flip it.
   - ADR-003 idempotent-consumers *(pending)*
   - ADR-004 mysql-as-source-of-truth + vector store ✅
   - ADR-005 vector-search *(may merge with 004)*
-  - ADR-006 mcp-application-boundary *(pending)*
+  - ADR-006 mcp-application-boundary ✅
   - ADR-007 cache-strategy *(pending)*
   - ADR-008+ multi-tenancy, auth, etc. *(as we build them)*
 - **ADR-1xx** — project-setup decisions (not core system design): LLM provider (101),
