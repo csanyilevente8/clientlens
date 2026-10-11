@@ -19,8 +19,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.security import create_access_token
 from app.integrations.embeddings.mock import MockEmbeddingProvider
 from app.integrations.vectorstore.pgvector import VectorStore
+from app.mcp import audit as mcp_audit
 from app.mcp import server as mcp_server
 from app.mcp.auth import MCPAuthError, authenticate
+from app.models.mcp_audit import McpAuditLog
 from app.models.meetings import Meeting
 from app.workers.index_worker import handle_intelligence_extracted
 from tests.conftest import auth_header, login, seed_tenant_user
@@ -102,9 +104,11 @@ async def test_search_tool_returns_grounded_answer_for_authenticated_tenant(
 
     # Point the tool at the TEST databases: its session factory -> test engine; its
     # VectorStore -> the test pgvector (port 5433); embedder -> mock (matches indexing).
+    # Also point the audit recorder at the test DB.
     monkeypatch.setattr(mcp_server, "SessionLocal", maker)
     monkeypatch.setattr(mcp_server, "VectorStore", lambda: vstore)
     monkeypatch.setattr(mcp_server, "get_embedding_provider", lambda: MockEmbeddingProvider())
+    monkeypatch.setattr(mcp_audit, "SessionLocal", maker)
 
     # Authenticated as this tenant -> grounded answer.
     jwt_token = create_access_token(subject="u1", tenant_id=tenant.id, role="advisor")
@@ -118,5 +122,17 @@ async def test_search_tool_returns_grounded_answer_for_authenticated_tenant(
     denied = await mcp_server.search_client_history(_ctx_with_auth(None),
                                                     query="anything")
     assert denied.startswith("Unauthorized")
+
+    # Both calls were audited (durable, §772): one success + one unauthorized.
+    async with maker() as s:
+        logs = (await s.execute(select(McpAuditLog))).scalars().all()
+    outcomes = sorted(a.outcome for a in logs)
+    assert outcomes == ["success", "unauthorized"]
+    success = next(a for a in logs if a.outcome == "success")
+    assert success.tenant_id == tenant.id
+    assert success.tool_name == "search_client_history"
+    assert success.arguments["client_id"] == cid
+    unauth = next(a for a in logs if a.outcome == "unauthorized")
+    assert unauth.tenant_id is None  # no tenant leaked for a failed-auth call
 
     await vstore.delete_by_meeting(m.tenant_id, m.id)
