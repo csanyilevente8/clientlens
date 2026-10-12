@@ -1,6 +1,7 @@
 import { useClient } from "@/features/clients/useClient";
 import { useClientMeetings } from "@/features/meetings/useClientMeetings";
 import { useParams, Link } from "react-router-dom"
+import { CreateMeetingForm } from "./CreateMeetingForm";
 
 const badgeClass: Record<string, string> = {
     CREATED: "badge badge--created",
@@ -24,6 +25,11 @@ export function ClientDetail() {
             <p><Link to="/clients">← Clients</Link></p>
             <h2>{client.name}</h2>
 
+            <div className="card">
+                <h3>New meeting</h3>
+                <CreateMeetingForm clientId={client.id} />
+            </div>
+            
             <div className="card">
                 <h3>Meetings</h3>
                 {meetings && meetings.length > 0 ? (
