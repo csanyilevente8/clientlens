@@ -74,9 +74,35 @@ explains/reviews):
 - Login page (controlled form -> POST login -> setToken -> navigate; error display).
 - Clients page: Client type, useClients() (useQuery), ClientsPage (loading/error/data),
   /clients route behind RequireAuth guard. Verified in browser.
-Frontend commits NOT yet counted in the push tally below until pushed this session.
-Next frontend steps: create-client form (useMutation + cache invalidation), client detail
-+ meetings (status display), search page (RAG). Then optionally Phases 5-9.
+- create-client form (useCreateClient useMutation + ["clients"] invalidation).
+- Client detail + meetings list (useClient, useClientMeetings): status badges
+  (CREATED/PROCESSING/COMPLETED/FAILED); useClientMeetings polls every 2s while any
+  meeting is CREATED/PROCESSING, stops otherwise.
+- Search page (RAG): useSearch useMutation -> POST /api/v1/search; answer + sources
+  with scores. (Tenant-wide by design; backend SearchRequest.client_id is optional and
+  not yet sent from the UI.)
+
+Frontend (2026-10-12 session) — mentor mode continued:
+- **Create-meeting form DONE** (closes the end-to-end async loop from the UI):
+  MeetingCreate type (mirrors backend schema: client_id/title/occurred_at/transcript),
+  useCreateMeeting(clientId) hook (POST /api/v1/meetings, invalidates ["meetings", clientId]),
+  CreateMeetingForm component (title input + transcript textarea, occurred_at = now ISO,
+  clears fields on success), wired into ClientDetail above the meetings list. Verified live:
+  create -> CREATED -> worker -> PROCESSING -> COMPLETED visible via polling.
+- **Frontend tests DONE** (first suite): Vitest (jsdom) + React Testing Library + jest-dom;
+  test/test:watch/test:coverage scripts; shared QueryClient wrapper (retries off). Covers
+  api/client (auth header, body serialize, success + error-detail parse), auth/token,
+  useCreateMeeting (payload + scoped invalidation + error), CreateMeetingForm (user submit
+  flow, ISO timestamp, field clearing, error display). 14 tests passing. **PUSHED to
+  origin/main** (b37cddb feat create-meeting, 41afe38 test setup+suite).
+Known issues (flagged, not fixed): backend container stalls on boot because `uv run`
+re-syncs dev deps at runtime (image built --no-dev) — recovered via restart; clean fix is
+to call .venv/bin/uvicorn directly in the Dockerfile CMD. Mock embedding provider makes all
+search scores ~1.000 (not a bug). Latent runaway-poll risk if a meeting never reaches a
+terminal state (worker down).
+
+Next frontend steps (optional): client-scoped search (send client_id), create-client /
+create-meeting empty-submit guards, more component coverage. Then Phases 8-9.
 
 Next backend phase: Phase 8 (Kubernetes) — Helm charts, deployments per service, HPA.
 (Phases 1-7 complete.)
@@ -134,32 +160,32 @@ Next backend phase: Phase 8 (Kubernetes) — Helm charts, deployments per servic
 
 ## Definition of Done (SPEC §50)
 
-- [ ] React frontend runs locally
-- [ ] Python backend runs locally
-- [ ] MySQL runs through Docker
-- [ ] users can authenticate
-- [ ] tenants are isolated
-- [ ] clients can be created
-- [ ] meetings can be created
-- [ ] meetings are processed asynchronously
-- [ ] Kafka is used for processing events
-- [ ] AI analysis produces structured output
-- [ ] LLM output is validated
-- [ ] client intelligence is persisted
-- [ ] historical semantic search works
-- [ ] basic RAG works
+- [x] React frontend runs locally
+- [x] Python backend runs locally
+- [x] MySQL runs through Docker
+- [x] users can authenticate
+- [x] tenants are isolated
+- [x] clients can be created
+- [x] meetings can be created
+- [x] meetings are processed asynchronously
+- [x] Kafka is used for processing events
+- [x] AI analysis produces structured output
+- [x] LLM output is validated
+- [x] client intelligence is persisted
+- [x] historical semantic search works
+- [x] basic RAG works
 - [x] mock CRM integration works
 - [x] CRM failures are retried
 - [x] consumers are idempotent
 - [x] MCP server exposes read-only tools
 - [x] MCP respects authorization
 - [x] MCP requests are audited
-- [ ] frontend displays processing status
+- [x] frontend displays processing status
 - [x] logs are structured
 - [x] metrics exist
-- [ ] unit tests exist
-- [ ] integration tests exist
-- [ ] Docker Compose starts the application
+- [x] unit tests exist
+- [x] integration tests exist
+- [x] Docker Compose starts the application
 - [ ] Helm deployment exists
 - [ ] Terraform architecture exists
 - [ ] CI pipeline runs tests and builds images
@@ -169,10 +195,10 @@ Next backend phase: Phase 8 (Kubernetes) — Helm charts, deployments per servic
 
 ## Phase checklist (SPEC §43)
 
-- [ ] Phase 1 — Foundation (React → FastAPI → MySQL; auth, clients, meetings)
-- [ ] Phase 2 — AI Processing (LLM abstraction, mock, structured extraction, validation)
-- [ ] Phase 3 — Kafka (events, AI worker, idempotency, retries)
-- [ ] Phase 4 — Search/RAG (chunking, embeddings, vector search, retrieval)
+- [x] Phase 1 — Foundation (React → FastAPI → MySQL; auth, clients, meetings)
+- [x] Phase 2 — AI Processing (LLM abstraction, mock, structured extraction, validation)
+- [x] Phase 3 — Kafka (events, AI worker, idempotency, retries)
+- [x] Phase 4 — Search/RAG (chunking, embeddings, vector search, retrieval)
 - [x] Phase 5 — CRM (mock CRM, worker, retries, DLQ, idempotency)
 - [x] Phase 6 — MCP (read-only tools, auth, audit)
 - [x] Phase 7 — Production engineering (logging, metrics, tracing, health)
