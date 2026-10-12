@@ -1,9 +1,17 @@
+/// <reference types="vitest/config" />
 import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    // jsdom gives us a browser-like DOM so React can render in Node.
+    environment: "jsdom",
+    globals: true, // describe/it/expect available without imports
+    setupFiles: "./src/test/setup.ts",
+    css: false, // we don't assert on styles; skip CSS processing for speed
+  },
   resolve: {
     // Match the TS path alias "@/..." -> "src/..." so Vite can resolve it too.
     // (tsconfig "paths" only configures the type-checker, not the bundler.)
